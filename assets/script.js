@@ -1,8 +1,11 @@
 const clientId = '07745df9262c4de48f0f8d25213b10a3';
 const clientSecret = 'c7e3a9d7bfad4498af076f0ca496f6e7';
 const encodedCredentials = btoa(`${clientId}:${clientSecret}`);
-var query = "broccoli";
+lyricContainer = document.getElementById("lyrics")
+var query = "free bird";
 var player = document.getElementById("player")
+
+
 init = function(){
 fetch('https://accounts.spotify.com/api/token', {
   method: 'POST',
@@ -33,9 +36,46 @@ fetch('https://accounts.spotify.com/api/token', {
   })
   .catch(error => console.error(error));
 }
+
+
   playSong = function(songs){
-    player.title = songs[0].name
-    player.src = songs[0].external_urls.spotify
+    title = songs[0].name
+    artist = songs[0].artists[0].name
+    uri = songs[0].uri
+    player.src = `https://open.spotify.com/embed/track/${uri.split(':')[2]}`
+    getLyrics(title,artist)
   }
 
+
+getLyrics = function(title,artist){           
+    fetch(`https://cors-anywhere.herokuapp.com/http://api.chartlyrics.com/apiv1.asmx/SearchLyricDirect?artist=${encodeURIComponent(artist)}&song=${encodeURIComponent(title)}`)
+      .then(response => {
+        if (response.ok) {
+          return response.text();
+        } else {
+          throw new Error('Network response was not ok');
+        }
+      })
+      .then(data => {
+        console.log(data);
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(data, "text/xml");
+        const lyricNodes = xmlDoc.getElementsByTagName("Lyric");
+        if (lyricNodes.length > 0) {
+            const lyric = lyricNodes[0].textContent;
+            console.log(lyric);
+            if (lyric){
+                lyricContainer.textContent = lyric
+            } else {
+                lyricContainer.textContent = "No Lyrics Found"
+            }
+          } else {
+            console.error("Error: Could not find lyrics in XML response");
+          }
+      })
+      .catch(error => {
+        console.error('There was a problem with the fetch operation:', error);
+      });
+    
+}
   init()
